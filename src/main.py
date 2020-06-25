@@ -65,5 +65,5 @@ gan = GAN(
 
 trainer.fit(gan, train_loader)
 
-os.system(f"ffmpeg -r 5 -i {output_img_path / f'real_imgs_%01d.png'} -vcodec mpeg4 -y {output_img_path / f'real_imgs.mp4'}")
-os.system(f"ffmpeg -r 5 -i {output_img_path / f'gen_imgs_%01d.png'} -vcodec mpeg4 -y {output_img_path / f'gen_imgs.mp4'}")
+os.system(f"ffmpeg -r 10 -i {output_img_path / f'real_imgs_%01d.png'} -vcodec libx264 -pix_fmt yuv420p -y {output_img_path / f'real_imgs.mp4'}")
+os.system(f"ffmpeg -r 10 -i {output_img_path / f'gen_imgs_%01d.png'} -vcodec libx264 -pix_fmt yuv420p -y {output_img_path / f'gen_imgs.mp4'}")
