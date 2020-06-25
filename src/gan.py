@@ -23,7 +23,7 @@ class GANGenerator(nn.Module):
             return [
                 nn.Linear(in_dim, out_dim),
                 nn.ReLU(inplace=True),
-                nn.BatchNorm1d(out_dim),
+                nn.Dropout(0.5),
             ]
 
         self.model = nn.Sequential(
@@ -55,7 +55,7 @@ class GANDiscriminator(nn.Module):
             return [
                 nn.Linear(in_dim, out_dim),
                 nn.ReLU(inplace=True),
-                nn.BatchNorm1d(out_dim),
+                nn.Dropout(0.5),
             ]
 
         self.model = nn.Sequential(
