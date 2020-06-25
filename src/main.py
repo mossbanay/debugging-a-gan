@@ -1,4 +1,5 @@
 import argparse
+import os
 import pytorch_lightning as pl
 import torch
 
@@ -10,6 +11,7 @@ from gan import GAN
 N_TRAINING_SAMPLES = 10000
 IMG_CHANNELS = 1
 DATA_DIR = Path("~/.data/mnist").expanduser()
+IMG_PATH = Path("./output_images/")
 
 
 parser = argparse.ArgumentParser(description="Debugging a GAN")
@@ -43,12 +45,6 @@ train_loader = torch.utils.data.DataLoader(
     **kwargs
 )
 
-gan = GAN(
-    latent_dim=args.latent_dim,
-    img_size=args.img_size,
-    img_channels=IMG_CHANNELS
-)
-
 checkpoint_callback = pl.callbacks.ModelCheckpoint(save_top_k=0)
 trainer = pl.Trainer.from_argparse_args(
     args,
@@ -56,4 +52,18 @@ trainer = pl.Trainer.from_argparse_args(
     checkpoint_callback=checkpoint_callback,
 )
 
+v_num = trainer.logger.version
+output_img_path = IMG_PATH / f'{v_num}'
+output_img_path.mkdir(exist_ok=True, parents=True)
+
+gan = GAN(
+    latent_dim=args.latent_dim,
+    img_size=args.img_size,
+    img_channels=IMG_CHANNELS,
+    output_img_path=output_img_path
+)
+
 trainer.fit(gan, train_loader)
+
+os.system(f"ffmpeg -r 5 -i {output_img_path / f'real_imgs_%01d.png'} -vcodec mpeg4 -y {output_img_path / f'real_imgs.mp4'}")
+os.system(f"ffmpeg -r 5 -i {output_img_path / f'gen_imgs_%01d.png'} -vcodec mpeg4 -y {output_img_path / f'gen_imgs.mp4'}")

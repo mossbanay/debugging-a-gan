@@ -76,12 +76,13 @@ class GANDiscriminator(nn.Module):
 
 
 class GAN(pl.LightningModule):
-    def __init__(self, latent_dim, img_size, img_channels=3, lr=1e-4):
+    def __init__(self, latent_dim, img_size, output_img_path=None, img_channels=3, lr=1e-4):
         super().__init__()
 
         self.latent_dim = latent_dim
         self.img_size = img_size
         self.lr = lr
+        self.output_img_path = output_img_path
 
         self.g = GANGenerator(latent_dim=latent_dim, img_size=img_size, img_channels=img_channels)
         self.d = GANDiscriminator(img_size=img_size, img_channels=img_channels)
@@ -173,8 +174,10 @@ class GAN(pl.LightningModule):
 
         grid = torchvision.utils.make_grid(0.5*real_imgs + 0.5, nrow=4)
         self.logger.experiment.add_image("real_imgs", grid, self.epoch_n)
+        torchvision.utils.save_image(grid, self.output_img_path / f"real_imgs_{self.epoch_n}.png")
 
         grid = torchvision.utils.make_grid(0.5*gen_imgs + 0.5, nrow=4)
         self.logger.experiment.add_image("gen_imgs", grid, self.epoch_n)
+        torchvision.utils.save_image(grid, self.output_img_path / f"gen_imgs_{self.epoch_n}.png")
 
         return
