@@ -163,6 +163,12 @@ class GAN(pl.LightningModule):
         opt_d = optim.Adam(self.d.parameters(), lr=self.lr, betas=(0.5, 0.99))
         return [opt_g, opt_d], []
 
+    def on_after_backward(self):
+        if self.trainer.global_step % 150 == 0:
+            params = self.state_dict()
+            for name, grads in params.items():
+                self.logger.experiment.add_histogram(tag=f'{name}_grad', values=grads, global_step=self.trainer.global_step)
+
     def plot_figs(self, real_imgs):
         """
         A simple helper function to log generated images throughout training
