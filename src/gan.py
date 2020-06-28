@@ -76,7 +76,7 @@ class GANDiscriminator(nn.Module):
 
 
 class GAN(pl.LightningModule):
-    def __init__(self, latent_dim, img_size, output_img_path=None, img_channels=3, lr=1e-4):
+    def __init__(self, latent_dim, img_size, args, output_img_path=None, img_channels=3, lr=1e-4):
         super().__init__()
 
         self.latent_dim = latent_dim

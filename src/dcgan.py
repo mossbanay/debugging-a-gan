@@ -101,11 +101,10 @@ class DCGAN(pl.LightningModule):
     def __init__(self,
         latent_dim,
         img_size,
+        args,
         output_img_path=None,
         img_channels=3,
-        lr=1e-4,
-        n_filters=16,
-        n_blocks=3):
+        lr=1e-4):
 
         super().__init__()
 
@@ -117,21 +116,19 @@ class DCGAN(pl.LightningModule):
             latent_dim=latent_dim,
             img_size=img_size,
             img_channels=img_channels,
-            n_filters=n_filters,
-            n_blocks=n_blocks
+            n_filters=args.n_filters,
+            n_blocks=args.n_blocks,
         )
 
         self.d = DCGANDiscriminator(
             img_size=img_size,
             img_channels=img_channels,
-            n_filters=n_filters,
-            n_blocks=n_blocks
+            n_filters=args.n_filters,
+            n_blocks=args.n_blocks
         )
 
         self.output_z = torch.randn(16, self.latent_dim)
         self.epoch_n = 0
-
-        self.update_cycle = 1
 
     def forward(self, x):
         return self.g(x)

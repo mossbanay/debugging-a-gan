@@ -37,6 +37,8 @@ parser.add_argument("--network", default="gan", type=str)
 parser.add_argument("--img-size", default=64, type=int)
 parser.add_argument("--max-epochs", default=100, type=int)
 parser.add_argument("--dataset", default="mnist", type=str)
+parser.add_argument("--n-filters", default=16, type=int)
+parser.add_argument("--n-blocks", default=3, type=int)
 
 args = parser.parse_args()
 
@@ -66,7 +68,8 @@ gan = ARCH_LOOKUP[args.network](
     latent_dim=args.latent_dim,
     img_size=args.img_size,
     img_channels=img_channels,
-    output_img_path=output_img_path
+    output_img_path=output_img_path,
+    args=args,
 )
 
 trainer.fit(gan, train_loader)
