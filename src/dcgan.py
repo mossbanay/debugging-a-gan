@@ -199,6 +199,18 @@ class DCGAN(pl.LightningModule):
             for name, grads in params.items():
                 self.logger.experiment.add_histogram(tag=f'{name}_grad', values=grads, global_step=self.trainer.global_step)
 
+    def optimizer_step(self, current_epoch, batch_idx, optimizer, optimizer_idx, second_order_closure):
+        # Update generator every step
+        if optimizer_idx == 0:
+            optimizer.step()
+            optimizer.zero_grad()
+
+        # Update discriminator every 5 steps
+        if optimizer_idx == 1:
+            if batch_idx % 5 == 0 :
+                optimizer.step()
+                optimizer.zero_grad()
+
     def plot_figs(self, real_imgs):
         """
         A simple helper function to log generated images throughout training
