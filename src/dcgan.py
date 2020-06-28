@@ -27,8 +27,7 @@ class DCGANGenerator(nn.Module):
 
             return [
                 nn.BatchNorm2d(in_filters),
-                nn.Upsample(scale_factor=2),
-                nn.Conv2d(in_filters, out_filters, kernel_size=3, stride=1, padding=1),
+                nn.ConvTranspose2d(in_filters, out_filters, kernel_size=3, stride=2, padding=1),
             ]
 
         convs = []
