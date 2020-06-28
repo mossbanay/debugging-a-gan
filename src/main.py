@@ -6,6 +6,7 @@ import torch
 from pathlib import Path
 from torchvision import datasets, transforms
 
+from dcgan import DCGAN
 from gan import GAN
 from utils import load_mnist, load_pokemon
 
@@ -21,13 +22,18 @@ DATASET_FUNC_LOOKUP = {
     'pokemon': load_pokemon,
 }
 
+ARCH_LOOKUP = {
+    'gan': GAN,
+    'dcgan': DCGAN,
+}
+
 parser = argparse.ArgumentParser(description="Debugging a GAN")
 parser = pl.Trainer.add_argparse_args(parser)
 
 parser.add_argument("--batch-size", default=64, type=int)
 parser.add_argument("--learning-rate", default=1e-5, type=float)
 parser.add_argument("--latent-dim", default=100, type=int)
-parser.add_argument("--network", default="GAN", type=str)
+parser.add_argument("--network", default="gan", type=str)
 parser.add_argument("--img-size", default=64, type=int)
 parser.add_argument("--max-epochs", default=100, type=int)
 parser.add_argument("--dataset", default="mnist", type=str)
@@ -56,7 +62,7 @@ v_num = trainer.logger.version
 output_img_path = IMG_PATH / f'{v_num}'
 output_img_path.mkdir(exist_ok=True, parents=True)
 
-gan = GAN(
+gan = ARCH_LOOKUP[args.network](
     latent_dim=args.latent_dim,
     img_size=args.img_size,
     img_channels=img_channels,
