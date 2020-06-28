@@ -11,31 +11,33 @@ import pytorch_lightning as pl
 
 
 class DCGANGenerator(nn.Module):
-    def __init__(self, latent_dim, img_size, img_channels=3):
+    def __init__(self, latent_dim, img_size, img_channels=3, n_filters=16, n_blocks=3):
         super().__init__()
 
-        self.latent_dim = latent_dim
-        self.img_size = img_size
-        self.img_channels = img_channels
-        self.init_size = img_size // 4
+        self.n_filters = n_filters
+        self.init_size = img_size // (2**n_blocks)
 
         self.l1 = nn.Sequential(
-            nn.Linear(latent_dim, 128 * self.init_size ** 2)
+            nn.Linear(latent_dim, n_filters * self.init_size * self.init_size)
         )
 
+        def block(in_filters, out_filters=None):
+            if out_filters is None:
+                out_filters = 2*in_filters
+
+            return [
+                nn.BatchNorm2d(in_filters),
+                nn.Upsample(scale_factor=2),
+                nn.Conv2d(in_filters, out_filters, kernel_size=3, stride=1, padding=1),
+            ]
+
+        convs = []
+        for i in range(n_blocks-1):
+            convs.extend(block((2**i) * n_filters))
+
         self.conv_blocks = nn.Sequential(
-            nn.BatchNorm2d(128),
-            nn.Upsample(scale_factor=2),
-            nn.Conv2d(128, 128, 3, stride=1, padding=1),
-            nn.BatchNorm2d(128, 0.8),
-            nn.LeakyReLU(0.2, inplace=True),
-            nn.Upsample(scale_factor=2),
-            nn.Conv2d(128, 128, 3, 1, 1),
-            nn.Conv2d(128, 64, 3, stride=1, padding=1),
-            nn.BatchNorm2d(64, 0.8),
-            nn.LeakyReLU(0.2, inplace=True),
-            nn.Conv2d(64, 64, 3, 1, 1),
-            nn.Conv2d(64, img_channels, 3, stride=1, padding=1),
+            *convs,
+            *block((2**(n_blocks-1)) * n_filters, img_channels),
             nn.Tanh(),
         )
 
@@ -45,43 +47,43 @@ class DCGANGenerator(nn.Module):
         Returns a (batch_size, img_channels, img_size, img_size) generated images
         """
         out = self.l1(z)
-        out = out.view(out.size(0), 128, self.init_size, self.init_size)
-        img = self.conv_blocks(out)
-
-        # Trim off excess image to match the size of pokemon sprites
-        output = img.view(z.size(0), 3, self.img_size, self.img_size)
-        return output
+        out = out.view(out.size(0), self.n_filters, self.init_size, self.init_size)
+        return self.conv_blocks(out)
 
 
 class DCGANDiscriminator(nn.Module):
-    def __init__(self, img_size, img_channels=3):
+    def __init__(self, img_size, img_channels=3, n_filters=16, n_blocks=3):
         super().__init__()
 
-        self.img_size = img_size
-        self.img_channels = img_channels
+        def block(in_filters, out_filters=None, normalise=True):
+            if out_filters is None:
+                out_filters = in_filters*2
 
-        def discriminator_block(in_feat, out_feat, normalise=True):
             block = [
-                nn.Conv2d(in_feat, out_feat, 3, 2, 1),
+                nn.Conv2d(in_filters, out_filters, kernel_size=3, stride=2, padding=1),
                 nn.LeakyReLU(0.2, inplace=True),
                 nn.Dropout2d(0.25),
             ]
 
             if normalise:
-                block.append(nn.BatchNorm2d(out_feat, 0.8))
+                block.append(nn.BatchNorm2d(out_filters, 0.8))
+
             return block
 
-        self.model = nn.Sequential(
-            *discriminator_block(img_channels, 16, normalise=False),
-            *discriminator_block(16, 32),
-            *discriminator_block(32, 64),
-            *discriminator_block(64, 128),
+        convs = []
+        for i in range(n_blocks):
+            convs.extend(block((2**i) * n_filters))
+
+        self.conv_blocks = nn.Sequential(
+            *block(img_channels, n_filters, normalise=False),
+            *convs,
         )
 
         ds_size = img_size // 2 ** 4
+        final_filters = (2**n_blocks) * n_filters
 
         self.adv_layer = nn.Sequential(
-            nn.Linear(128 * ds_size * ds_size, 1), nn.Sigmoid()
+            nn.Linear(final_filters * ds_size * ds_size, 1), nn.Sigmoid()
         )
 
     def forward(self, img):
@@ -89,23 +91,42 @@ class DCGANDiscriminator(nn.Module):
         Takes a (batch_size, img_channels, img_size, img_size) generated or real images
         Returns a (batch_size, 1) tensor of probabilities that the input is real
         """
-        out = self.model(img)
+        out = self.conv_blocks(img)
         out = out.view(out.size(0), -1)
 
         return self.adv_layer(out)
 
 
 class DCGAN(pl.LightningModule):
-    def __init__(self, latent_dim, img_size, output_img_path=None, img_channels=3, lr=1e-4):
+    def __init__(self,
+        latent_dim,
+        img_size,
+        output_img_path=None,
+        img_channels=3,
+        lr=1e-4,
+        n_filters=16,
+        n_blocks=3):
+
         super().__init__()
 
         self.latent_dim = latent_dim
-        self.img_size = img_size
         self.lr = lr
         self.output_img_path = output_img_path
 
-        self.g = DCGANGenerator(latent_dim=latent_dim, img_size=img_size, img_channels=img_channels)
-        self.d = DCGANDiscriminator(img_size=img_size, img_channels=img_channels)
+        self.g = DCGANGenerator(
+            latent_dim=latent_dim,
+            img_size=img_size,
+            img_channels=img_channels,
+            n_filters=n_filters,
+            n_blocks=n_blocks
+        )
+
+        self.d = DCGANDiscriminator(
+            img_size=img_size,
+            img_channels=img_channels,
+            n_filters=n_filters,
+            n_blocks=n_blocks
+        )
 
         self.output_z = torch.randn(16, self.latent_dim)
         self.epoch_n = 0
