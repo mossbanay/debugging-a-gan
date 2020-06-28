@@ -79,7 +79,7 @@ class DCGANDiscriminator(nn.Module):
             *convs,
         )
 
-        ds_size = img_size // 2 ** 4
+        ds_size = img_size // 2 ** (n_blocks+1)
         final_filters = (2**n_blocks) * n_filters
 
         self.adv_layer = nn.Sequential(
