@@ -185,5 +185,3 @@ class GAN(pl.LightningModule):
         grid = torchvision.utils.make_grid(0.5*gen_imgs + 0.5, nrow=4)
         self.logger.experiment.add_image("gen_imgs", grid, self.epoch_n)
         torchvision.utils.save_image(grid, self.output_img_path / f"gen_imgs_{self.epoch_n}.png")
-
-        return

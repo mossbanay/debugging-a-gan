@@ -27,7 +27,7 @@ class DCGANGenerator(nn.Module):
 
             return [
                 nn.BatchNorm2d(in_filters),
-                nn.ConvTranspose2d(in_filters, out_filters, kernel_size=3, stride=2, padding=1),
+                nn.ConvTranspose2d(in_filters, out_filters, kernel_size=3, stride=2, padding=1, output_padding=1),
             ]
 
         convs = []
@@ -227,20 +227,3 @@ class DCGAN(pl.LightningModule):
         grid = torchvision.utils.make_grid(0.5*gen_imgs + 0.5, nrow=4)
         self.logger.experiment.add_image("gen_imgs", grid, self.epoch_n)
         torchvision.utils.save_image(grid, self.output_img_path / f"gen_imgs_{self.epoch_n}.png")
-        """
-        A simple helper function to log generated images throughout training
-        """
-
-        self.epoch_n += 1
-
-        gen_imgs = self(self.output_z.type_as(real_imgs))
-
-        grid = torchvision.utils.make_grid(0.5*real_imgs + 0.5, nrow=4)
-        self.logger.experiment.add_image("real_imgs", grid, self.epoch_n)
-        torchvision.utils.save_image(grid, self.output_img_path / f"real_imgs_{self.epoch_n}.png")
-
-        grid = torchvision.utils.make_grid(0.5*gen_imgs + 0.5, nrow=4)
-        self.logger.experiment.add_image("gen_imgs", grid, self.epoch_n)
-        torchvision.utils.save_image(grid, self.output_img_path / f"gen_imgs_{self.epoch_n}.png")
-
-        return

@@ -8,6 +8,7 @@ from torchvision import datasets, transforms
 
 from dcgan import DCGAN
 from gan import GAN
+from wgan import WGAN
 from utils import load_mnist, load_pokemon
 
 IMG_PATH = Path("./output_images/")
@@ -25,6 +26,7 @@ DATASET_FUNC_LOOKUP = {
 ARCH_LOOKUP = {
     'gan': GAN,
     'dcgan': DCGAN,
+    'wgan_gp': WGAN,
 }
 
 parser = argparse.ArgumentParser(description="Debugging a GAN")
@@ -39,6 +41,9 @@ parser.add_argument("--max-epochs", default=100, type=int)
 parser.add_argument("--dataset", default="mnist", type=str)
 parser.add_argument("--n-filters", default=16, type=int)
 parser.add_argument("--n-blocks", default=3, type=int)
+parser.add_argument("--weight-clip-thres", default=1e-2, type=float)
+parser.add_argument("--gp-lambda", default=10, type=float)
+parser.add_argument("--use-gp", default=True, type=bool)
 
 args = parser.parse_args()
 
