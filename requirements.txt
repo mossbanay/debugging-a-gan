@@ -19,7 +19,7 @@ importlib-metadata==1.6.1
 kiwisolver==1.2.0
 Markdown==3.2.2
 matplotlib==3.2.2
-numpy==1.19.0
+numpy==1.22.0
 oauthlib==3.1.0
 pathspec==0.8.0
 pbr==5.4.5
